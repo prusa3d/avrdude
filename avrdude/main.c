@@ -52,7 +52,7 @@
 
 
 /* Get VERSION from ac_cfg.h */
-char * version      = VERSION;
+char * version      = VERSION "-prusa3d";
 
 char * progname;
 char   progbuf[PATH_MAX]; /* temporary buffer of spaces the same

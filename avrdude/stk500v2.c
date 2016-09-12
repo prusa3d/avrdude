@@ -2272,6 +2272,16 @@ static int stk500v2_paged_write(PROGRAMMER * pgm, AVRPART * p, AVRMEM * m,
   int result;
   OPCODE * rop, * wop;
 
+  // Prusa3D workaround for a bug in the USB communication controller. The semicolon character is used as an initial character
+  // for special command sequences for the USB communication chip. The early releases of the USB communication chip had
+  // a bug, which produced a 0x0ff character after the semicolon. The patch is to program the semicolons by flashing
+  // firmware blocks twice: First the low nibbles of semicolons, second the high nibbles of the semicolon characters.
+  //
+  // Inside the 2nd round of a firmware block flashing?
+  bool prusa3d_semicolon_workaround_round2 = false;
+  // Buffer containing the other nibbles of semicolons to be flashed in the 2nd round.
+  unsigned char prusa3d_semicolon_workaround_round2_data[256];
+
   DEBUG("STK500V2: stk500v2_paged_write(..,%s,%u,%u,%u)\n",
         m->desc, page_size, addr, n_bytes);
 
@@ -2308,7 +2318,7 @@ static int stk500v2_paged_write(PROGRAMMER * pgm, AVRPART * p, AVRMEM * m,
 
   // if the memory is paged, load the appropriate commands into the buffer
   if (m->mode & 0x01) {
-    commandbuf[3] = m->mode | 0x80;		// yes, write the page to flash
+    commandbuf[3] = m->mode | 0x80;   // yes, write the page to flash
 
     if (m->op[AVR_OP_LOADPAGE_LO] == NULL) {
       avrdude_message(MSG_INFO, "%s: stk500v2_paged_write: loadpage instruction not defined for part \"%s\"\n",
@@ -2329,7 +2339,7 @@ static int stk500v2_paged_write(PROGRAMMER * pgm, AVRPART * p, AVRMEM * m,
   // otherwise, we need to load different commands in
   } 
   else {
-    commandbuf[3] = m->mode | 0x80;		// yes, write the words to flash
+    commandbuf[3] = m->mode | 0x80;   // yes, write the words to flash
 
     if (wop == NULL) {
       avrdude_message(MSG_INFO, "%s: stk500v2_paged_write: write instruction not defined for part \"%s\"\n",
@@ -2353,9 +2363,9 @@ static int stk500v2_paged_write(PROGRAMMER * pgm, AVRPART * p, AVRMEM * m,
   commandbuf[8] = m->readback[0];
   commandbuf[9] = m->readback[1];
 
-  last_addr=UINT_MAX;		/* impossible address */
+  last_addr=UINT_MAX;   /* impossible address */
 
-  for (; addr < maxaddr; addr += page_size) {
+  for (; addr < maxaddr; addr += prusa3d_semicolon_workaround_round2 ? 0 : page_size) {
     if ((maxaddr - addr) < page_size)
       block_size = maxaddr - addr;
     else
@@ -2368,13 +2378,29 @@ static int stk500v2_paged_write(PROGRAMMER * pgm, AVRPART * p, AVRMEM * m,
     buf[1] = block_size >> 8;
     buf[2] = block_size & 0xff;
 
-    if((last_addr==UINT_MAX)||(last_addr+block_size != addr)){
+    if((last_addr==UINT_MAX)||(last_addr+block_size != addr)||prusa3d_semicolon_workaround_round2){
       if (stk500v2_loadaddr(pgm, use_ext_addr | (addr >> addrshift)) < 0)
         return -1;
     }
     last_addr=addr;
 
-    memcpy(buf+10,m->buf+addr, block_size);
+    if (prusa3d_semicolon_workaround_round2) {
+        // printf("Round 2: address %d\r\n", addr);
+        memcpy(buf+10, prusa3d_semicolon_workaround_round2_data, block_size);
+        prusa3d_semicolon_workaround_round2 = false;
+    } else {
+        for (size_t i = 0; i < block_size; ++ i) {
+            unsigned char b = m->buf[addr+i];
+            if (b == ';') {
+              // printf("semicolon at %d %d\r\n", addr, i);
+              prusa3d_semicolon_workaround_round2_data[i] = b | 0x0f0;
+              b |= 0x0f;
+              prusa3d_semicolon_workaround_round2 = true;
+            } else 
+              prusa3d_semicolon_workaround_round2_data[i] = 0x0ff;
+            buf[i+10] = b;
+        }
+    }
 
     result = stk500v2_command(pgm,buf,block_size+10, sizeof(buf));
     if (result < 0) {

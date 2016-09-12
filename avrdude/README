@@ -1,3 +1,21 @@
+THIS IS A PRUSA3D BRANCH, WORKING AROUND A SPECIFIC PROBLEM 
+IN THE EARLY I3 MK2 USB COMMUNICATION CHIPS.
+
+Some of the early Prusa3D i3 MK2 printers were shipped with a buggy
+USB communication controller firmware. This fork of avrdude contains
+a workaround inside the stk500v2 protocol implementation. 
+
+The workaround depends on a specific behavior of the Arduino AVR 2560
+bootloader, which is installed on the i3 MK2 printers:
+
+https://github.com/arduino/Arduino-stk500v2-bootloader
+
+The avrdude binary modified by Prusa3D could replace the avrdude bianary
+of arduino to program the RAMBo board. In that case the modified binary
+is identified by a "-prusa3d" suffix to the version information.
+
+-------------------------------------------------------------------
+
 See the documentation file for the details.
 
 The latest version of AVRDUDE is always available here:
