@@ -54,6 +54,8 @@ void stk500v2_teardown(PROGRAMMER * pgm);
 int stk500v2_drain(PROGRAMMER * pgm, int display);
 int stk500v2_getsync(PROGRAMMER * pgm);
 
+void stk500v2_set_upload_size(PROGRAMMER * pgm, int size);
+
 #ifdef __cplusplus
 }
 #endif

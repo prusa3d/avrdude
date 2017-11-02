@@ -1254,6 +1254,7 @@ static int stk500hvsp_program_enable(PROGRAMMER * pgm, AVRPART * p)
  */
 static int stk500v2_initialize(PROGRAMMER * pgm, AVRPART * p)
 {
+
   LNODEID ln;
   AVRMEM * m;
 
@@ -1327,7 +1328,6 @@ static int stk500v2_initialize(PROGRAMMER * pgm, AVRPART * p)
     pgm->disable(pgm);
     usleep(10000);
   }
-
   return pgm->program_enable(pgm, p);
 }
 
@@ -2264,6 +2264,7 @@ static int stk500v2_paged_write(PROGRAMMER * pgm, AVRPART * p, AVRMEM * m,
                                 unsigned int page_size,
                                 unsigned int addr, unsigned int n_bytes)
 {
+static int page = 0;
   unsigned int block_size, last_addr, addrshift, use_ext_addr;
   unsigned int maxaddr = addr + n_bytes;
   unsigned char commandbuf[10];
@@ -4361,6 +4362,7 @@ const char stk500v2_desc[] = "Atmel STK500 Version 2.x firmware";
 
 void stk500v2_initpgm(PROGRAMMER * pgm)
 {
+
   strcpy(pgm->type, "STK500V2");
 
   /*
@@ -4393,6 +4395,7 @@ void stk500v2_initpgm(PROGRAMMER * pgm)
   pgm->setup          = stk500v2_setup;
   pgm->teardown       = stk500v2_teardown;
   pgm->page_size      = 256;
+  pgm->set_upload_size= stk500v2_set_upload_size;
 }
 
 const char stk500pp_desc[] = "Atmel STK500 V2 in parallel programming mode";
@@ -4745,5 +4748,15 @@ void stk500v2_jtag3_initpgm(PROGRAMMER * pgm)
   pgm->setup          = stk500v2_jtag3_setup;
   pgm->teardown       = stk500v2_jtag3_teardown;
   pgm->page_size      = 256;
+}
+
+void stk500v2_set_upload_size(PROGRAMMER * pgm, int size)
+{
+	unsigned char buf[16];
+	buf[0] = CMD_SET_UPLOAD_SIZE_PRUSA3D;
+	buf[1] = size & 0xff;
+	buf[2] = size >> 8;
+	buf[3] = size >> 16;
+	stk500v2_command(pgm, buf, 4, sizeof(buf));
 }
 

@@ -283,6 +283,13 @@ int do_op(PROGRAMMER * pgm, struct avrpart * p, UPDATE * upd, enum updateflags f
             progname, mem->desc, size);
 	  }
 
+	//Prusa3D bootloader progress on lcd
+	if (strcmp(pgm->type, "Wiring") == 0)
+	{
+		if (pgm->set_upload_size != 0)
+			pgm->set_upload_size(pgm, size);
+	}
+
     if (!(flags & UF_NOWRITE)) {
       report_progress(0,1,"Writing");
       rc = avr_write(pgm, p, upd->memtype, size, (flags & UF_AUTO_ERASE) != 0);

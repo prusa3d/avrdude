@@ -27,7 +27,6 @@
 #define CMD_LOAD_RC_ID_TABLE                0x0E
 #define CMD_LOAD_EC_ID_TABLE                0x0F
 
-
 // *****************[ STK ISP command constants ]******************************
 
 #define CMD_ENTER_PROGMODE_ISP              0x10
@@ -90,6 +89,11 @@
 
 #define CMD_XPROG                           0x50
 #define CMD_XPROG_SETMODE                   0x51
+
+
+// *****************[ STK Prusa3D specific command constants ]*****************
+
+#define CMD_SET_UPLOAD_SIZE_PRUSA3D         0x71
 
 
 // *** AVR32 JTAG Programming command ***

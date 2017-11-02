@@ -677,6 +677,7 @@ typedef struct programmer_t {
   int  (*parseextparams) (struct programmer_t * pgm, LISTID xparams);
   void (*setup)          (struct programmer_t * pgm);
   void (*teardown)       (struct programmer_t * pgm);
+  void (*set_upload_size)(struct programmer_t * pgm, int size);
   char config_file[PATH_MAX]; /* config file where defined */
   int  lineno;                /* config file line number */
   void *cookie;		      /* for private use by the programmer */
